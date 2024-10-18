@@ -79,11 +79,11 @@ def initialize_llm(llm:str = "OpenAI"):
         return None
 
 @st.cache_resource
-def initialize_vector_store(embeddings, nlist:int, vector_store: str = "faiss"):
+def initialize_vector_store(_embeddings, nlist:int, vector_store: str = "faiss"):
     try:
         if vector_store == 'faiss':
             # index creation for faiss
-            d = len(embeddings.embed_query("hello world"))
+            d = len(_embeddings.embed_query("hello world"))
             index = faiss.IndexFlatL2(d)
             # nlist = 5  # Num of voronoi cells
             quantizer = faiss.IndexFlatL2(d)
@@ -91,7 +91,7 @@ def initialize_vector_store(embeddings, nlist:int, vector_store: str = "faiss"):
 
             # initialize vector store
             return index, FAISS(
-                embedding_function=embeddings,
+                embedding_function=_embeddings,
                 index=index,
                 docstore=InMemoryDocstore(),
                 index_to_docstore_id={}
@@ -121,7 +121,7 @@ def main():
 
     # file uploader
     pdf_file = st.file_uploader("Upload your PDF", type='pdf', accept_multiple_files=False) # single pdf file only
-    if pdf_file is not None:
+    if pdf_file is not None and pdf_file.size < 10 * 1024 * 1024:
         pdf_reader = PdfReader(pdf_file)
 
         # extract text from the pdf
@@ -194,7 +194,8 @@ def main():
             exc_type, exc_value, exc_tb = sys.exc_info()
             tb = TracebackException(exc_type, exc_value, exc_tb)
             print(''.join(tb.format_exception_only()))
-            
+    else:
+        st.error("Invalid Input or file size too large! Please upload a file smaller than 10MB.")
 
 if __name__ == "__main__":
     main()
